@@ -1,0 +1,310 @@
+---
+## rke2 PushProx Monitoring
+## ref: https://github.com/rancher/charts/tree/dev-v2.9/packages/rancher-monitoring/rancher-pushprox
+##
+rke2ControllerManager:
+  enabled: true
+  metricsPort: 10257 # default to secure port as of k8s >= 1.22
+  component: kube-controller-manager
+  clients:
+    https:
+      enabled: true
+      insecureSkipVerify: true
+      useServiceAccountCredentials: true
+    port: 10011
+    useLocalhost: true
+    nodeSelector:
+      node-role.kubernetes.io/master: "true"
+    tolerations:
+      - effect: "NoExecute"
+        operator: "Exists"
+      - effect: "NoSchedule"
+        operator: "Exists"
+  serviceMonitor:
+    labels:
+      infra.chainstack.com/scrape-group: infrastructure
+  kubeVersionOverrides:
+  - constraint: "< 1.22"
+    values:
+      metricsPort: 10252 # default to insecure port in k8s < 1.22
+      clients:
+        https:
+          enabled: false
+          insecureSkipVerify: false
+          useServiceAccountCredentials: false
+
+rke2Scheduler:
+  enabled: true
+  metricsPort: 10259 # default to secure port as of k8s >= 1.22
+  component: kube-scheduler
+  clients:
+    https:
+      enabled: true
+      insecureSkipVerify: true
+      useServiceAccountCredentials: true
+    port: 10012
+    useLocalhost: true
+    nodeSelector:
+      node-role.kubernetes.io/master: "true"
+    tolerations:
+      - effect: "NoExecute"
+        operator: "Exists"
+      - effect: "NoSchedule"
+        operator: "Exists"
+  serviceMonitor:
+    labels:
+      infra.chainstack.com/scrape-group: infrastructure
+  kubeVersionOverrides:
+  - constraint: "< 1.22"
+    values:
+      metricsPort: 10251 # default to insecure port in k8s < 1.22
+      clients:
+        https:
+          enabled: false
+          insecureSkipVerify: false
+          useServiceAccountCredentials: false
+
+rke2Proxy:
+  enabled: false
+  metricsPort: 10249
+  component: kube-proxy
+  clients:
+    port: 10013
+    useLocalhost: true
+    tolerations:
+      - effect: "NoExecute"
+        operator: "Exists"
+      - effect: "NoSchedule"
+        operator: "Exists"
+  serviceMonitor:
+    labels:
+      infra.chainstack.com/scrape-group: infrastructure
+
+rke2Etcd:
+  enabled: true
+  metricsPort: 2381
+  component: kube-etcd
+  clients:
+    port: 10014
+    useLocalhost: true
+    nodeSelector:
+      node-role.kubernetes.io/etcd: "true"
+    tolerations:
+      - effect: "NoExecute"
+        operator: "Exists"
+      - effect: "NoSchedule"
+        operator: "Exists"
+  serviceMonitor:
+    labels:
+      infra.chainstack.com/scrape-group: infrastructure
+
+rke2IngressNginx:
+  enabled: false
+  metricsPort: 10254
+  component: ingress-nginx
+  # in the RKE2 cluster, the ingress-nginx-controller is deployed
+  # as a non-hostNetwork workload starting at the following versions
+  # - >= v1.22.12+rke2r1 < 1.23.0-0
+  # - >= v1.23.9+rke2r1 < 1.24.0-0
+  # - >= v1.24.3+rke2r1 < 1.25.0-0
+  # - >= v1.25.0+rke2r1
+  # As a result we do not need clients and proxies as we can directly create
+  # a service that targets the workload with the given app name
+  namespaceOverride: kube-system
+  clients:
+    enabled: false
+  proxy:
+    enabled: false
+  service:
+    selector:
+      app.kubernetes.io/name: rke2-ingress-nginx
+  serviceMonitor:
+    labels:
+      infra.chainstack.com/scrape-group: infrastructure
+  kubeVersionOverrides:
+  - constraint: "< 1.21.0-0"
+    values:
+      namespaceOverride: ""
+      clients:
+        enabled: true
+        port: 10015
+        useLocalhost: true
+        tolerations:
+          - effect: "NoExecute"
+            operator: "Exists"
+          - effect: "NoSchedule"
+            operator: "Exists"
+        affinity:
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: "app.kubernetes.io/component"
+                      operator: "In"
+                      values:
+                        - "controller"
+                topologyKey: "kubernetes.io/hostname"
+                namespaces:
+                  - "kube-system"
+        # in the RKE2 cluster, the ingress-nginx-controller is deployed as
+        # a DaemonSet with 1 pod when RKE2 version is < 1.21.0-0
+        deployment:
+          enabled: false
+      proxy:
+        enabled: true
+      service:
+        selector: false
+  - constraint: ">= 1.21.0-0 < 1.22.12-0"
+    values:
+      namespaceOverride: ""
+      clients:
+        enabled: true
+        port: 10015
+        useLocalhost: true
+        tolerations:
+          - effect: "NoExecute"
+            operator: "Exists"
+          - effect: "NoSchedule"
+            operator: "Exists"
+        affinity:
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: "app.kubernetes.io/component"
+                      operator: "In"
+                      values:
+                        - "controller"
+                topologyKey: "kubernetes.io/hostname"
+                namespaces:
+                  - "kube-system"
+        # in the RKE2 cluster, the ingress-nginx-controller is deployed as
+        # a hostNetwork Deployment with 1 pod when RKE2 version is >= 1.21.0-0
+        deployment:
+          enabled: true
+          replicas: 1
+      proxy:
+        enabled: true
+      service:
+        selector: false
+  - constraint: ">= 1.23.0-0 < v1.23.9-0"
+    values:
+      namespaceOverride: ""
+      clients:
+        enabled: true
+        port: 10015
+        useLocalhost: true
+        tolerations:
+          - effect: "NoExecute"
+            operator: "Exists"
+          - effect: "NoSchedule"
+            operator: "Exists"
+        affinity:
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: "app.kubernetes.io/component"
+                      operator: "In"
+                      values:
+                        - "controller"
+                topologyKey: "kubernetes.io/hostname"
+                namespaces:
+                  - "kube-system"
+        # in the RKE2 cluster, the ingress-nginx-controller is deployed as
+        # a hostNetwork Deployment with 1 pod when RKE2 version is >= 1.20.0-0
+        deployment:
+          enabled: true
+          replicas: 1
+      proxy:
+        enabled: true
+      service:
+        selector: false
+  - constraint: ">= 1.24.0-0 < v1.24.3-0"
+    values:
+      namespaceOverride: ""
+      clients:
+        enabled: true
+        port: 10015
+        useLocalhost: true
+        tolerations:
+          - effect: "NoExecute"
+            operator: "Exists"
+          - effect: "NoSchedule"
+            operator: "Exists"
+        affinity:
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: "app.kubernetes.io/component"
+                      operator: "In"
+                      values:
+                        - "controller"
+                topologyKey: "kubernetes.io/hostname"
+                namespaces:
+                  - "kube-system"
+        # in the RKE2 cluster, the ingress-nginx-controller is deployed as
+        # a hostNetwork Deployment with 1 pod when RKE2 version is >= 1.20.0-0
+        deployment:
+          enabled: true
+          replicas: 1
+      proxy:
+        enabled: true
+      service:
+        selector: false
+
+##
+global:
+  cattle:
+    psp:
+      enabled: false
+
+    systemDefaultRegistry: ""
+    ## Windows Monitoring
+    ## ref: https://github.com/rancher/charts/tree/dev-v2.5-source/packages/rancher-windows-exporter
+    ##
+    ## Deploys a DaemonSet of Prometheus exporters based on https://github.com/prometheus-community/windows_exporter.
+    ## Every Windows host must have a wins version of 0.1.0+ to use this chart (default as of Rancher 2.5.8).
+    ## To upgrade wins versions on Windows hosts, see https://github.com/rancher/wins/tree/master/charts/rancher-wins-upgrader.
+    ##
+    windows:
+      enabled: false
+  seLinux:
+    enabled: false
+  kubectl:
+     repository: rancher/kubectl
+     tag: v1.20.2
+     pullPolicy: IfNotPresent
+  rbac:
+    ## Create RBAC resources for ServiceAccounts and users
+    ##
+    create: true
+
+    userRoles:
+      ## Create default user ClusterRoles to allow users to interact with Prometheus CRs, ConfigMaps, and Secrets
+      create: true
+      ## Aggregate default user ClusterRoles into default k8s ClusterRoles
+      aggregateToDefaultRoles: true
+
+    pspAnnotations: {}
+      ## Specify pod annotations
+      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#apparmor
+      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#seccomp
+      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#sysctl
+      ##
+      # seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
+      # seccomp.security.alpha.kubernetes.io/defaultProfileName: 'docker/default'
+      # apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
+
+  ## Global image registry to use if it needs to be overriden for some specific use cases (e.g local registries, custom images, ...)
+  ##
+  imageRegistry: docker.io
+
+  ## Reference to one or more secrets to be used when pulling images
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  imagePullSecrets: []
+  # - name: "image-pull-secret"
+  # or
+  # - "image-pull-secret"

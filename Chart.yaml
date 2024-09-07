@@ -1,0 +1,24 @@
+apiVersion: v2
+appVersion: v0.0.1
+dependencies:
+- condition: rke2ControllerManager.enabled
+  name: rke2ControllerManager
+  repository: file://./charts/rke2ControllerManager
+- condition: rke2Etcd.enabled
+  name: rke2Etcd
+  repository: file://./charts/rke2Etcd
+- condition: rke2IngressNginx.enabled
+  name: rke2IngressNginx
+  repository: file://./charts/rke2IngressNginx
+- condition: rke2Proxy.enabled
+  name: rke2Proxy
+  repository: file://./charts/rke2Proxy
+- condition: rke2Scheduler.enabled
+  name: rke2Scheduler
+  repository: file://./charts/rke2Scheduler
+name: rke2PushProxMonitoring
+sources:
+- https://github.com/prometheus-community/helm-charts
+- https://github.com/prometheus-operator/kube-prometheus
+type: application
+version: 0.0.1
