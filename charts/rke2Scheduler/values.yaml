@@ -53,7 +53,7 @@ serviceMonitor:
   # By default, proxyUrl and params._scheme will be overridden based on other values
   endpoints:
   - port: metrics
-  labels: []
+  labels: {}
 
 # Configure Service that grabs scrape targets
 service:

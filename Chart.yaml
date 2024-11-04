@@ -4,21 +4,30 @@ dependencies:
 - condition: rke2ControllerManager.enabled
   name: rke2ControllerManager
   repository: file://./charts/rke2ControllerManager
+  version: ">=0.2.0"
 - condition: rke2Etcd.enabled
   name: rke2Etcd
   repository: file://./charts/rke2Etcd
+  version: ">=0.2.0"
 - condition: rke2IngressNginx.enabled
   name: rke2IngressNginx
   repository: file://./charts/rke2IngressNginx
+  version: ">=0.2.0"
 - condition: rke2Proxy.enabled
   name: rke2Proxy
   repository: file://./charts/rke2Proxy
+  version: ">=0.2.0"
 - condition: rke2Scheduler.enabled
   name: rke2Scheduler
   repository: file://./charts/rke2Scheduler
-name: rke2PushProxMonitoring
+  version: ">=0.2.0"
+description: rke2-pushprox allows to collect metrics
+  from the RKE2 cluster control-plane components,
+  which are not directly exposed for scraping.
+name: rke2-pushprox
 sources:
 - https://github.com/prometheus-community/helm-charts
 - https://github.com/prometheus-operator/kube-prometheus
+- https://github.com/rancher/charts/tree/dev-v2.9/charts/rancher-monitoring/104.1.1-rc1%2Bup57.0.3
 type: application
 version: 0.0.1

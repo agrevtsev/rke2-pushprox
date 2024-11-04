@@ -1,7 +1,5 @@
 ---
-## rke2 PushProx Monitoring
-## ref: https://github.com/rancher/charts/tree/dev-v2.9/packages/rancher-monitoring/rancher-pushprox
-##
+## rke2-pushprox
 rke2ControllerManager:
   enabled: true
   metricsPort: 10257 # default to secure port as of k8s >= 1.22
